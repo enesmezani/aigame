@@ -9,18 +9,17 @@ import datetime
 
 print("Code begins...")
 
-# Paths for saving model and videos
 desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop/aigame')
+
 videos_folder = os.path.join(desktop_path, 'ai_videos')
 model_folder = os.path.join(desktop_path, 'ai_model')
 os.makedirs(videos_folder, exist_ok=True)
 os.makedirs(model_folder, exist_ok=True)
 
 # Load CartPole dataset
-dataset_path = "C:/Users/Perdorues/Desktop/aigame/cartpole_dataset.csv"
+dataset_path = os.path.join(desktop_path, 'cartpole_dataset.csv')
 cartpole_data = pd.read_csv(dataset_path)
 
-# Define the DQN neural network model
 class DQNNetwork(tf.keras.Model):
     def __init__(self, num_actions):
         super(DQNNetwork, self).__init__()
@@ -33,7 +32,6 @@ class DQNNetwork(tf.keras.Model):
         x = self.dense2(x)
         return self.output_layer(x)
 
-# DQN Agent class
 class DQNAgent:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
@@ -65,12 +63,10 @@ class DQNAgent:
     def update_target_model(self):
         self.target_model.set_weights(self.model.get_weights())
 
-# Create CartPole environment
 env = gym.make("CartPole-v1", render_mode="rgb_array")
 
-# Video recording setup
 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-video_path = os.path.join(videos_folder, 'cartpole_video.avi')
+video_path = os.path.join(videos_folder, 'video.avi')
 video_recorder = cv2.VideoWriter(video_path, fourcc, 10.0, (600, 400))
 
 state_size = env.observation_space.shape[0]
@@ -98,59 +94,45 @@ for idx, row in cartpole_data.iterrows():
     state = np.array([[row['cart_position'], row['cart_velocity'], row['pole_angle'], row['pole_angular_velocity']]])
     action = int(row['action'])
     reward = row['reward']
-    next_state = np.array([[row['cart_position'] + 0.01, row['cart_velocity'] - 0.01, row['pole_angle'] + 0.005, row['pole_angular_velocity'] - 0.005]])
+    next_state = np.array([[row['cart_position'], row['cart_velocity'], row['pole_angle'], row['pole_angular_velocity']]])
     done = int(row['done'])
-
     agent.train(state, action, reward, next_state, done)
 
-agent.update_target_model()
-print("Pre-training from dataset complete.")
-
-# Fine-tune using reinforcement learning
-episodes = 7000
+episodes = 700
 reward_history = []
 
 for episode in range(episodes):
-    initial_state = env.reset()[0]
+    initial_state, _ = env.reset()
     state = np.reshape(initial_state, [1, state_size])
-
     total_reward = 0
     done = False
-    step_count = 0
-
     while not done:
         action = agent.select_action(state)
         next_state, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
-
-        print(f"Episode {episode + 1}, Step {step_count}, Action: {action}, Reward: {reward}")
-
         next_state = np.reshape(next_state, [1, state_size])
         agent.train(state, action, reward, next_state, done)
-
         state = next_state
         total_reward += reward
-        step_count += 1
+
+        frame = env.render()
+        if frame is not None:
+            frame = cv2.resize(frame, (600, 400))
+            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            video_recorder.write(frame_bgr)
+
+    if episode % 10 == 0:
+        agent.update_target_model()
 
     if agent.epsilon > agent.epsilon_min:
         agent.epsilon *= agent.epsilon_decay
 
-    print(f"Episode {episode + 1} finished with total reward: {total_reward}")
-
-    if total_reward > 195:
-        print(f"Early stopping at episode {episode + 1}")
-        break
-
+    print(f"Episode: {episode + 1}, Total Reward: {total_reward}")
     reward_history.append(total_reward)
 
 video_recorder.release()
+agent.target_model.save_weights(os.path.join(model_folder, "model-" + datetime.datetime.now().strftime("%y%m%d%H%M") + ".tfmodel"))
 
-# Save the trained model
-model_save_path = os.path.join(model_folder, "cartpole_model-" + datetime.datetime.now().strftime("%y%m%d%H%M") + ".tfmodel")
-agent.target_model.save_weights(model_save_path)
-print(f"Model saved to {model_save_path}")
-
-# Plot training performance
 plt.plot(reward_history)
 plt.title('Training Performance')
 plt.xlabel('Episode')

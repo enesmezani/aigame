@@ -1,2 +1,2 @@
-model_checkpoint_path: "cartpole_model-2501220007.tfmodel"
-all_model_checkpoint_paths: "cartpole_model-2501220007.tfmodel"
+model_checkpoint_path: "model-2501222331.tfmodel"
+all_model_checkpoint_paths: "model-2501222331.tfmodel"
