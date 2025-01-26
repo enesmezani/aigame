@@ -98,7 +98,7 @@ for idx, row in cartpole_data.iterrows():
     done = int(row['done'])
     agent.train(state, action, reward, next_state, done)
 
-episodes = 700
+episodes = 10000
 reward_history = []
 
 for episode in range(episodes):
