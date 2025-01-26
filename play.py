@@ -3,8 +3,6 @@ import numpy as np
 import tensorflow as tf
 import gym
 import matplotlib.pyplot as plt
-import cv2
-import datetime
 import tkinter as tk
 from PIL import Image, ImageTk
 import threading
@@ -66,7 +64,7 @@ canvas.pack()
 def update_canvas(img, canvas):
     tk_img = ImageTk.PhotoImage(image=img)
     canvas.create_image(0, 0, image=tk_img, anchor="nw")
-    canvas.image = tk_img  # Keep a reference to avoid garbage collection
+    canvas.image = tk_img
 
 def play(model_folder, canvas):
     env = gym.make("CartPole-v1", render_mode="rgb_array")
