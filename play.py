@@ -74,11 +74,8 @@ def play(model_folder, canvas):
 
     agent = DQNAgent(state_size, action_size)
 
-    latest_model = max([f for f in os.listdir(model_folder) if f.endswith(".tfmodel.index")], 
-                       key=lambda x: os.path.getctime(os.path.join(model_folder, x)))
-    latest_model_path = os.path.join(model_folder, latest_model.replace(".index", ""))
-    agent.model.load_weights(latest_model_path)
-    agent.target_model.load_weights(latest_model_path)
+    agent.model.load_weights(os.path.join(model_folder, "model-2501271425.tfmodel"))
+    agent.target_model.load_weights(os.path.join(model_folder, "model-2501271425.tfmodel"))
     
     agent.epsilon = 0
     episodes = 3
